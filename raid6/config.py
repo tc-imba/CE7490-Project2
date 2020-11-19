@@ -7,12 +7,15 @@ class Settings(BaseSettings):
     app_name: str = "raid6"
 
     host: str = "127.0.0.1"
+    base_port: int = 10000
     port: int = 10000
     debug: bool = False
 
     server_id: int = 0
     primary: int = 6
     replica: int = 2
+
+    data_dir: str = "/var/data/raid6"
 
 
 @lru_cache()

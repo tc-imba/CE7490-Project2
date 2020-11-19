@@ -6,33 +6,47 @@ from raid6.pyfinite.ffield import FField
 import numpy
 import time
 from raid6.cpp.pyrscode import PyRSCode
+import pickle
 
-n = 9
-k = 6
+from raid6.data import encode_data, generate_file, decode_data
 
-cppcoder = PyRSCode(n, k)
-raw = bytes([41, 35, 190, 132, 225, 108])
-parity = bytes(n - k)
+file_path = '/a/b'
+buffer = secrets.token_bytes(10000)
+# print(buffer)
+
+file = generate_file(file_path, buffer)
+pieces = encode_data(file)
+pprint(pieces)
+
+decoded_file = decode_data(pieces)
 
 
-cppcoder.encode(1, raw, parity)
-pprint(raw)
-pprint(parity)
-encoded = raw + parity
-# for i in range(n):
-#     print(encoded[i])
-
-rows = bytes([0, 1, 2, 3, 4, 6])
-temp = []
-for i in rows:
-    temp.append(encoded[i])
-temp = bytes(temp)
-decoded = bytes(k)
-
-cppcoder.decode(1, rows, temp, decoded)
-
-pprint(temp)
-pprint(decoded)
+# n = 9
+# k = 6
+#
+# cppcoder = PyRSCode(n, k)
+# raw = bytes([41, 35, 190, 132, 225, 108])
+# parity = bytes(n - k)
+#
+#
+# cppcoder.encode(1, raw, parity)
+# pprint(raw)
+# pprint(parity)
+# encoded = raw + parity
+# # for i in range(n):
+# #     print(encoded[i])
+#
+# rows = bytes([0, 1, 2, 3, 4, 6])
+# temp = []
+# for i in rows:
+#     temp.append(encoded[i])
+# temp = bytes(temp)
+# decoded = bytes(k)
+#
+# cppcoder.decode(1, rows, temp, decoded)
+#
+# pprint(temp)
+# pprint(decoded)
 
 # for i in range(k):
 #     print(decoded[i])

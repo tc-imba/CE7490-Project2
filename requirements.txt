@@ -5,3 +5,5 @@ pbr
 msgpack-python
 pydantic
 Cython
+aiofile
+aiohttp
