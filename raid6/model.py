@@ -1,6 +1,8 @@
 import base64
 import os
 import pickle
+import asyncio
+import random
 
 import aiofile
 import aiohttp
@@ -8,18 +10,23 @@ from uvicorn.config import logger
 
 from raid6 import get_session
 from raid6.config import settings
+from raid6.data import encode_data
 
 
 def get_filename(file_path):
     return base64.b32encode(file_path.encode('utf-8')).decode('ascii')
 
 
-async def write_file_block_in_fs(file_path, func):
-    filename = get_filename(file_path)
-    logger.info('%s: writeblock in server %d', file_path, settings.server_id)
-    file_path = os.path.join(settings.data_dir, filename)
-    async with aiofile.async_open(file_path, 'wb') as f:
-        await f.write(await func())
+write_file_block_in_fs_lock = asyncio.Lock()
+
+
+async def write_file_block_in_fs(file_path, buffer):
+    async with write_file_block_in_fs_lock:
+        filename = get_filename(file_path)
+        logger.info('%s: writeblock into server %d', file_path, settings.server_id)
+        file_path = os.path.join(settings.data_dir, filename)
+        async with aiofile.async_open(file_path, 'wb') as f:
+            await f.write(buffer)
 
 
 async def read_file_block_from_fs(file_path):
@@ -34,10 +41,7 @@ async def send_file_block(server_id, file_path, piece):
     try:
         buffer = pickle.dumps(piece)
         if server_id == settings.server_id:
-            async def __get_buffer():
-                return buffer
-
-            await write_file_block_in_fs(file_path, __get_buffer)
+            await write_file_block_in_fs(file_path, buffer)
             logger.info('%s: sendblock %d to server %d', file_path, piece.piece_id, server_id)
             return True
         else:
@@ -84,3 +88,24 @@ async def receive_file_block(server_id, file_path):
         logger.error('%s failed: receiveblock from server %d', file_path, server_id)
         # logger.exception(e)
     return None
+
+
+async def process_file(file, piece_map):
+    pieces = encode_data(file)
+    n = len(pieces)
+    assert len(piece_map) == n
+    tasks = []
+    servers = set(range(n))
+    sending_pieces = []
+    for piece_id, server_id in enumerate(piece_map):
+        if server_id in servers:
+            servers.remove(server_id)
+        elif server_id < 0:
+            sending_pieces.append(pieces[piece_id])
+    servers = list(servers)
+    assert len(servers) == len(sending_pieces)
+    random.shuffle(servers)
+    for i, piece in enumerate(sending_pieces):
+        tasks.append(send_file_block(servers[i], file.path, piece))
+    result = await asyncio.gather(*tasks)
+    return result

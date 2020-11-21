@@ -23,9 +23,13 @@ class FilePiece(File):
     piece_id: int
 
 
+class FilePieceWithId(FilePiece):
+    server_id: int
+
+
 def init_coder() -> PyRSCode:
     global __coder
-    nodes = settings.primary + settings.replica
+    nodes = settings.primary + settings.parity
     __coder = PyRSCode(nodes, settings.primary)
     return __coder
 
@@ -42,7 +46,7 @@ def generate_file(path, buffer):
 
 def encode_data(file: File):
     # initialization
-    n = settings.primary + settings.replica
+    n = settings.primary + settings.parity
     k = settings.primary
 
     # align buffer to multiple of k bytes
@@ -75,17 +79,21 @@ def encode_data(file: File):
 
 def decode_data(pieces):
     # initialization
-    n = settings.primary + settings.replica
+    n = settings.primary + settings.parity
     k = settings.primary
 
     # filter pieces with latest timestamp and correct checksum
+    for i in range(len(pieces)):
+        if pieces[i] is not None:
+            pieces[i] = FilePieceWithId(**pieces[i].dict(), server_id=i)
+    pieces = list(filter(lambda x: x is not None, pieces))
     timestamp = 0
     checksum = ''
     piece_size = 0
     size = 0
     path = ''
     for piece in pieces:
-        piece: FilePiece
+        piece: FilePieceWithId
         if piece.timestamp > timestamp:
             timestamp = piece.timestamp
             checksum = piece.checksum
@@ -94,7 +102,7 @@ def decode_data(pieces):
             path = piece.path
     pieces = list(filter(lambda x: x.timestamp == timestamp and x.checksum == checksum and
                                    x.piece_size == piece_size and x.size == size and x.path == path and
-                                   x.n == n and x.k == k, pieces))
+                                   x.n == n and x.k == k and x.piece_id < n, pieces))
 
     # make sure piece id is unique
     temp = []
@@ -108,6 +116,10 @@ def decode_data(pieces):
 
     if len(pieces) < k:
         raise ValueError('Too few available blocks')
+
+    piece_map = [-1] * n
+    for piece in pieces:
+        piece_map[piece.piece_id] = piece.server_id
 
     pieces = pieces[:k]
     rows = []
@@ -129,7 +141,7 @@ def decode_data(pieces):
     if checksum != decoded_checksum:
         raise ValueError('Checksum not matched')
 
-    return File(path=path, size=size, timestamp=timestamp, checksum=checksum, buffer=decoded_buffer)
+    return File(path=path, size=size, timestamp=timestamp, checksum=checksum, buffer=decoded_buffer), piece_map
 
 
 def get_coder() -> PyRSCode:

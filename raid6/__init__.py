@@ -34,8 +34,8 @@ async def startup_event():
     global session
     logger.info(settings)
     assert settings.primary > 0
-    assert settings.replica >= 0
-    assert 0 <= settings.server_id < settings.primary + settings.replica
+    assert settings.parity >= 0
+    assert 0 <= settings.server_id < settings.primary + settings.parity
     settings.port = settings.server_id + settings.base_port
     init_coder()
     logger.info(get_coder())

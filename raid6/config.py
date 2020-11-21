@@ -10,10 +10,11 @@ class Settings(BaseSettings):
     base_port: int = 10000
     port: int = 10000
     debug: bool = False
+    random: bool = False
 
     server_id: int = 0
     primary: int = 6
-    replica: int = 2
+    parity: int = 2
 
     data_dir: str = "/var/data/raid6"
 

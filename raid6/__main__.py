@@ -5,13 +5,14 @@ from raid6.config import get_settings
 
 
 @click.command()
-@click.option('-h', '--host', default='127.0.0.1')
-@click.option('-p', '--base-port', default=10000)
-@click.option('-d', '--debug', is_flag=True)
-@click.option('-s', '--server-id', type=int, required=True)
-@click.option('-k', '--primary', default=6)
-@click.option('-m', '--replica', default=2)
-@click.option('--data-dir', default='/var/data/raid6')
+@click.option('-h', '--host', default='127.0.0.1', help='Host address')
+@click.option('-p', '--base-port', default=10000, help='Port of the first server')
+@click.option('-d', '--debug', is_flag=True, help='Enable debug mode')
+@click.option('-s', '--server-id', type=int, required=True, help='ID of the current server')
+@click.option('-k', '--primary', default=6, help='Number of primary data strips')
+@click.option('-m', '--parity', default=2, help='Number of parity data strips')
+@click.option('-r', '--random', is_flag=True, help='Enable random distribution of data strips')
+@click.option('--data-dir', default='/var/data/raid6', help='Location of data strips')
 def main(**kwargs):
     settings = get_settings()
     for key, value in kwargs.items():
