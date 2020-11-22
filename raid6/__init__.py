@@ -7,13 +7,13 @@ from raid6.config import settings
 from raid6.data import init_coder, get_coder
 
 
-def get_version():
-    return str(pbr.version.VersionInfo('raid6'))
+# def get_version():
+#     return str(pbr.version.VersionInfo('raid6'))
 
 
 app = FastAPI(
     title=settings.app_name,
-    version=get_version(),
+    # version=get_version(),
     description='sid: %d' % settings.server_id
 )
 

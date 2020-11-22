@@ -33,6 +33,7 @@ RSCode::~RSCode() {
 }
 
 void RSCode::encode(size_t size, unsigned char *raw, unsigned char *parity) {
+    if (n == k) return;
     for (size_t i = 0; i < size; i++) {
         for (unsigned char j = 0; j < k; j++) {
             tempData[j] = raw[size * j + i];
@@ -45,7 +46,7 @@ void RSCode::encode(size_t size, unsigned char *raw, unsigned char *parity) {
 }
 
 void RSCode::decode(size_t size, unsigned char *rows, unsigned char *encoded, unsigned char *decoded) {
-    memset(rowFlags, 0, 6);
+    memset(rowFlags, 0, k);
     unsigned char deletedRowSize = 0;
     for (unsigned char i = 0; i < k; i++) {
         assert(rows[i] < n);
@@ -57,6 +58,7 @@ void RSCode::decode(size_t size, unsigned char *rows, unsigned char *encoded, un
             deletedRowSize++;
         }
     }
+    if (n == k) return;
     decoder.inverse();
     for (size_t i = 0; i < size; i++) {
         for (unsigned char j = 0; j < k; j++) {

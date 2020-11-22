@@ -57,14 +57,17 @@ public:
 
     void testFileSize(size_t _size, size_t times) {
         initialize(_size);
-        unsigned char n = 8;
-        for (unsigned char k = 1; k <= n; k++) {
-            testRSCode(n, k, times);
-        }
-        n = 128;
-        for (unsigned char k = 8; k <= n; k+=8) {
-            testRSCode(n, k, times);
-        }
+        testRSCode(8, 8, times);
+        testRSCode(128, 128, times);
+//        unsigned char n;
+//        n = 8;
+//        for (unsigned char k = 1; k <= n; k++) {
+//            testRSCode(n, k, times);
+//        }
+//        n = 128;
+//        for (unsigned char k = 16; k <= n; k+=16) {
+//            testRSCode(n, k, times);
+//        }
     }
 };
 
@@ -73,8 +76,8 @@ int main() {
     Test test;
 
     std::cout << "size,n,k,times,encode,decode" << std::endl;
-//    test.testFileSize(1024, 1000);
-//    test.testFileSize(1024 * 1024, 10);
+    test.testFileSize(1024, 1000);
+    test.testFileSize(1024 * 1024, 10);
     test.testFileSize(1024 * 1024 * 1024, 1);
 
 /*    RSCode rsCode(9, 6);
