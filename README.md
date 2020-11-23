@@ -51,6 +51,8 @@ Then play on
 + http://127.0.0.1:10000/docs
 + http://127.0.0.1:10001/docs
 
+The APIs should have been well-documented
+
 If you want to deploy many data nodes, usage of docker is preferred
 
 ## Deployment with Docker
