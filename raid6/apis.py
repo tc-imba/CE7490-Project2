@@ -6,15 +6,15 @@ import pickle
 
 import aiofile
 from fastapi.requests import Request
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import FileResponse
 from fastapi.exceptions import HTTPException
 from fastapi import File, UploadFile, BackgroundTasks
 from uvicorn.config import logger
 
 from raid6 import app
 from raid6.config import settings
-from raid6.data import generate_file, encode_data, decode_data, File as Raid6File
-from raid6.model import send_file_block, receive_file_block, write_file_block_in_fs, read_file_block_from_fs, \
+from raid6.data import generate_file, decode_data, File as Raid6File
+from raid6.model import receive_file_block, write_file_block_in_fs, read_file_block_from_fs, \
     get_filename, process_file, remove_file, delete_file_block_in_fs
 
 

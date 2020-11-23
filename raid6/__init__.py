@@ -1,23 +1,14 @@
-import os
 from fastapi import FastAPI
-import pbr.version
+from fastapi.responses import RedirectResponse
 from aiohttp import ClientSession
 
 from raid6.config import settings
 from raid6.data import init_coder, get_coder
 
 
-# def get_version():
-#     return str(pbr.version.VersionInfo('raid6'))
-
-
 app = FastAPI(
     title=settings.app_name,
-    # version=get_version(),
-    description='sid: %d' % settings.server_id
 )
-
-from uvicorn.config import logger
 
 __session : ClientSession = None
 
@@ -55,4 +46,4 @@ from raid6.apis import *
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return RedirectResponse(url='/docs')
