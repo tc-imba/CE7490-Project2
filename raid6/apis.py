@@ -76,6 +76,7 @@ async def read_file(file_path: str, background_tasks: BackgroundTasks, stats: bo
             return FileResponse(temp_file.name, media_type='application/octet-stream')
 
     except Exception as e:
+        logger.exception(e)
         raise HTTPException(400, str(e))
 
 
@@ -94,6 +95,7 @@ async def write_file(file_path: str, file: UploadFile = File(...)):
             'delay': delay
         }
     except Exception as e:
+        logger.exception(e)
         raise HTTPException(400, str(e))
 
 
@@ -110,6 +112,7 @@ async def delete_file(file_path: str):
             'delay': time.time() - start
         }
     except Exception as e:
+        logger.exception(e)
         raise HTTPException(400, str(e))
 
 
@@ -150,6 +153,7 @@ async def write_file_block(file_path: str, request: Request):
                 logger.error('%s failed: writeblock into server %d, received file has smaller timestamp',
                              file_path, settings.server_id)
     except Exception as e:
+        logger.exception(e)
         raise HTTPException(400, str(e))
 
 
@@ -162,6 +166,7 @@ async def delete_file_block(file_path: str, timestamp: int):
                 'result': result
             }
     except Exception as e:
+        logger.exception(e)
         raise HTTPException(400, str(e))
 
 
