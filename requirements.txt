@@ -7,3 +7,4 @@ pydantic
 Cython
 aiofile
 aiohttp
+python-multipart

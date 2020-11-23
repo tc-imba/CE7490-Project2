@@ -3,6 +3,7 @@ import os
 import pickle
 import asyncio
 import random
+import time
 
 import aiofile
 import aiohttp
@@ -35,6 +36,25 @@ async def read_file_block_from_fs(file_path):
     file_path = os.path.join(settings.data_dir, filename)
     async with aiofile.async_open(file_path, 'rb') as f:
         return await f.read()
+
+
+async def delete_file_block_in_fs(file_path, timestamp):
+    async with write_file_block_in_fs_lock:
+        filename = get_filename(file_path)
+        new_file_path = os.path.join(settings.data_dir, filename)
+        delete_flag = True
+        try:
+            async with aiofile.async_open(new_file_path, 'rb') as f:
+                piece = pickle.loads(await f.read())
+                if piece.timestamp >= timestamp:
+                    delete_flag = False
+        except Exception as e:
+            logger.exception(e)
+            pass
+        logger.info('%s: deleteblock from server %d, flag=%d', file_path, settings.server_id, delete_flag)
+        if delete_flag:
+            os.remove(new_file_path)
+    return delete_flag
 
 
 async def send_file_block(server_id, file_path, piece):
@@ -90,8 +110,35 @@ async def receive_file_block(server_id, file_path):
     return None
 
 
+async def delete_file_block(server_id, file_path, timestamp):
+    try:
+        if server_id == settings.server_id:
+            return await delete_file_block_in_fs(file_path, timestamp)
+        else:
+            port = settings.base_port + server_id
+            url = 'http://%s:%d/deleteblock/%s?timestamp=%d' % (settings.host, port, file_path, timestamp)
+            session = get_session()
+            async with session.get(url) as resp:
+                resp: aiohttp.ClientResponse
+                if resp.status == 200:
+                    data = await resp.json()
+                    logger.info(data)
+                    if data['result'] is True:
+                        return True
+                else:
+                    raise Exception(resp)
+    except Exception as e:
+        pass
+        # logger.error('%s failed: receiveblock from server %d', file_path, server_id)
+        # logger.exception(e)
+    return False
+
+
 async def process_file(file, piece_map):
+    start = time.time()
     pieces = encode_data(file)
+    encode_time = time.time() - start
+    start = time.time()
     n = len(pieces)
     assert len(piece_map) == n
     tasks = []
@@ -104,8 +151,19 @@ async def process_file(file, piece_map):
             sending_pieces.append(pieces[piece_id])
     servers = list(servers)
     assert len(servers) == len(sending_pieces)
-    random.shuffle(servers)
+    if settings.random:
+        random.shuffle(servers)
     for i, piece in enumerate(sending_pieces):
         tasks.append(send_file_block(servers[i], file.path, piece))
+    result = await asyncio.gather(*tasks)
+    transfer_time = time.time() - start
+    return result, [encode_time, transfer_time]
+
+
+async def remove_file(file_path):
+    timestamp = int(round(time.time() * 1000))
+    tasks = []
+    for i in range(settings.primary + settings.parity):
+        tasks.append(delete_file_block(i, file_path, timestamp))
     result = await asyncio.gather(*tasks)
     return result

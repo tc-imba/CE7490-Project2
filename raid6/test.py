@@ -7,18 +7,20 @@ import numpy
 import time
 from raid6.cpp.pyrscode import PyRSCode
 import pickle
+import math
 
 from raid6.data import encode_data, generate_file, decode_data
 
-file_path = '/a/b'
-buffer = secrets.token_bytes(10000)
+
+# file_path = '/a/b'
+# buffer = secrets.token_bytes(1024)
 # print(buffer)
 
-file = generate_file(file_path, buffer)
-pieces = encode_data(file)
-pprint(pieces)
-
-decoded_file = decode_data(pieces)
+# file = generate_file(file_path, buffer)
+# pieces = encode_data(file)
+# pprint(pieces)
+#
+# decoded_file = decode_data(pieces)
 
 
 # n = 9
@@ -52,28 +54,45 @@ decoded_file = decode_data(pieces)
 #     print(decoded[i])
 
 
+#
 
-#
-# coder = RSCode(n=n, k=k, log2FieldSize=8, shouldUseLUT=1)
-# print(coder.encoderMatrix)
-#
-# raw = [41, 35, 190, 132, 225, 108]
-# encoded = coder.Encode(raw)
-# print(encoded)
-#
-# rows = [0, 1, 2, 3, 4, 6]
-# coder.PrepareDecoder(rows)
-# print(coder.decoderMatrix)
-#
-# decoded = []
-# for i in rows:
-#     decoded.append(encoded[i])
-# print(decoded)
-#
-# decoded = coder.Decode(decoded)
-# print(decoded)
+def test_pyfinite(n, k, raw, times):
+    coder = RSCode(n=n, k=k, log2FieldSize=8, shouldUseLUT=1)
+
+    size = len(raw)
+    piece_size = math.ceil(size / k)
+    encoded = []
+
+    start = time.time()
+    for i in range(piece_size):
+        buffer = raw[i * k:(i + 1) * k]
+        if len(buffer) < k:
+            buffer += bytes(k - len(buffer))
+        encoded += coder.Encode(buffer)
+    end = time.time()
+    time_encode = (end - start) * 1e9
+
+    rows = list(range(n))
+    rows = rows[-k:]
+
+    start = time.time()
+    coder.PrepareDecoder(rows)
+    decoded = []
+    for i in range(piece_size):
+        decoded += coder.Decode(encoded[i * k:(i + 1) * k])
+    end = time.time()
+    time_decode = (end - start) * 1e9
+
+    print('pyfinite,%d,%d,%d,%d,%d,%d' % (size, n, k, times, time_encode, time_decode))
 
 
+small_raw = secrets.token_bytes(1024)
+middle_raw = secrets.token_bytes(1024 * 1024)
+for n in [8, 128]:
+    for i in range(1, 9):
+        k = n // 8 * i
+        test_pyfinite(n, k, small_raw, 10)
+        test_pyfinite(n, k, middle_raw, 10)
 
 #
 # data = coder.encoderMatrix.MakeSimilarMatrix(size=(k, 1000000), fillMode='z')
@@ -178,4 +197,3 @@ class GF8(object):
 
 # encoderMatrix = numpy.linalg.inv(encoderMatrix.transpose()).transpose()
 # print(encoderMatrix)
-

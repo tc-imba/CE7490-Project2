@@ -1,6 +1,6 @@
 import os
 import asyncio
-import random
+import time
 import tempfile
 import pickle
 
@@ -15,7 +15,7 @@ from raid6 import app
 from raid6.config import settings
 from raid6.data import generate_file, encode_data, decode_data, File as Raid6File
 from raid6.model import send_file_block, receive_file_block, write_file_block_in_fs, read_file_block_from_fs, \
-    get_filename, process_file
+    get_filename, process_file, remove_file, delete_file_block_in_fs
 
 
 def delete_temp_file(filename: str):
@@ -37,21 +37,29 @@ async def rebuild_redundancy(file: Raid6File, piece_map):
     await process_file(file, piece_map)
 
 
-
-@app.get('/read/{file_path:path}', response_class=FileResponse)
-async def read_file(file_path: str, background_tasks: BackgroundTasks):
+@app.get('/read/{file_path:path}')
+async def read_file(file_path: str, background_tasks: BackgroundTasks, stats: bool = False):
     try:
         tasks = []
+        start = time.time()
         for i in range(settings.primary + settings.parity):
             tasks.append(receive_file_block(i, file_path))
         pieces = await asyncio.gather(*tasks)
+        transfer_time = time.time() - start
+        start = time.time()
         file, piece_map = decode_data(pieces)
         temp_file = tempfile.NamedTemporaryFile(delete=False)
         async with aiofile.async_open(temp_file.name, 'wb') as f:
             await f.write(file.buffer)
+        decode_time = time.time() - start
         background_tasks.add_task(delete_temp_file, temp_file.name)
         background_tasks.add_task(rebuild_redundancy, file, piece_map)
-        return FileResponse(temp_file.name, media_type='application/octet-stream')
+        if stats:
+            return {
+                'delay': [transfer_time, decode_time]
+            }
+        else:
+            return FileResponse(temp_file.name, media_type='application/octet-stream')
 
     except Exception as e:
         raise HTTPException(400, str(e))
@@ -64,11 +72,28 @@ async def write_file(file_path: str, file: UploadFile = File(...)):
         buffer = await file.read()
         file = generate_file(file_path, buffer)
         piece_map = [-1] * (settings.primary + settings.parity)
-        result = await process_file(file, piece_map)
+        result, delay = await process_file(file, piece_map)
         received_count = sum(result)
         return {
             'success': received_count >= settings.primary,
-            'result': result
+            'result': result,
+            'delay': delay
+        }
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get('/delete/{file_path:path}')
+async def delete_file(file_path: str):
+    try:
+        logger.info('delete: %s', file_path)
+        start = time.time()
+        result = await remove_file(file_path)
+        deleted_count = sum(result)
+        return {
+            'success': deleted_count == settings.primary + settings.parity,
+            'result': result,
+            'delay': time.time() - start
         }
     except Exception as e:
         raise HTTPException(400, str(e))
@@ -109,5 +134,17 @@ async def write_file_block(file_path: str, request: Request):
             else:
                 logger.error('%s failed: writeblock into server %d, received file has smaller timestamp',
                              file_path, settings.server_id)
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get('/deleteblock/{file_path:path}')
+async def delete_file_block(file_path: str, timestamp: int):
+    try:
+        async with write_file_block_lock:
+            result = await delete_file_block_in_fs(file_path, timestamp)
+            return {
+                'result': result
+            }
     except Exception as e:
         raise HTTPException(400, str(e))

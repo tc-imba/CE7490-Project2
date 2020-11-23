@@ -25,20 +25,26 @@ SIZE_MAP = {
 }
 
 
-def plot_encode_decode_size_n(df, size, n):
+def plot_encode_decode_size_n(df, size, n, pyfinite=False):
     size_h = SIZE_MAP[size]
     filename = 'encode-decode-size-%s-n-%d.%s' % (size_h, n, file_format)
     title = 'File Size: %s, Data Nodes: %d' % (size_h, n)
     print(filename, title)
 
-    cond = ((df['size'] == size) & (df['n'] == n))
+    cond = ((df['size'] == size) & (df['n'] == n) & (df['type'] == 'cpp'))
     new_df = df[cond].copy()
     plt.plot(new_df['k'], new_df['encode'] / 1e9 / new_df['times'], label='encode')
     plt.plot(new_df['k'], new_df['decode'] / 1e9 / new_df['times'], label='decode')
 
+    if pyfinite:
+        cond = ((df['size'] == size) & (df['n'] == n) & (df['type'] == 'pyfinite'))
+        new_df = df[cond].copy()
+        plt.plot(new_df['k'], new_df['encode'] / 1e9 / new_df['times'], label='encode (pyfinite)')
+        plt.plot(new_df['k'], new_df['decode'] / 1e9 / new_df['times'], label='decode (pyfinite)')
+
     plt.xlabel('Number of Primary Data Strips')
     plt.ylabel('Average Time (s)')
-    # plt.yscale('log')
+    plt.yscale('log')
     plt.xticks(new_df['k'])
     plt.legend()
     plt.title(title)
@@ -51,7 +57,11 @@ def main():
     filename = os.path.join(experiment_dir, "encode_decode.csv")
     df = pd.read_csv(filename)
 
-    for size in SIZE_MAP.keys():
+    for size in [1024, 1024 * 1024]:
+        for n in [8, 128]:
+            plot_encode_decode_size_n(df, size, n, pyfinite=True)
+
+    for size in [1024 * 1024 * 1024]:
         for n in [8, 128]:
             plot_encode_decode_size_n(df, size, n)
 

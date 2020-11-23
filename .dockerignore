@@ -4,6 +4,8 @@ raid6/cpp/pyrscode.cpp
 .settings.json
 ffield.lut.8
 server*
+experiment
+plots
 
 # Created by .ignore support plugin (hsz.mobi)
 *.d
