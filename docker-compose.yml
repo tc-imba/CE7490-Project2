@@ -4,67 +4,81 @@ services:
     restart: always
     image: raid6:latest
     container_name: raid6-0
-    networks:
-      - default
+    network_mode: "host"
+    volumes:
+      - raid6-0:/var/data/raid6
     environment:
       SERVER_ID: 0
-      PORT: 11000
-    ports:
-      - "11000:11000"
   raid6-1:
     restart: always
     image: raid6:latest
     container_name: raid6-1
-    networks:
-      - default
+    network_mode: "host"
+    volumes:
+      - raid6-1:/var/data/raid6
     environment:
       SERVER_ID: 1
-      PORT: 11001
-    ports:
-      - "11001:11001"
   raid6-2:
     restart: always
     image: raid6:latest
     container_name: raid6-2
-    networks:
-      - default
+    network_mode: "host"
+    volumes:
+      - raid6-2:/var/data/raid6
     environment:
       SERVER_ID: 2
-      PORT: 11002
-    ports:
-      - "11002:11002"
   raid6-3:
     restart: always
     image: raid6:latest
     container_name: raid6-3
-    networks:
-      - default
+    network_mode: "host"
+    volumes:
+      - raid6-3:/var/data/raid6
     environment:
       SERVER_ID: 3
-      PORT: 11003
-    ports:
-      - "11003:11003"
   raid6-4:
     restart: always
     image: raid6:latest
     container_name: raid6-4
-    networks:
-      - default
+    network_mode: "host"
+    volumes:
+      - raid6-4:/var/data/raid6
     environment:
       SERVER_ID: 4
-      PORT: 11004
-    ports:
-      - "11004:11004"
   raid6-5:
     restart: always
     image: raid6:latest
     container_name: raid6-5
-    networks:
-      - default
+    network_mode: "host"
+    volumes:
+      - raid6-5:/var/data/raid6
     environment:
       SERVER_ID: 5
-      PORT: 11005
-    ports:
-      - "11005:11005"
-networks:
-  default:
+  raid6-6:
+    restart: always
+    image: raid6:latest
+    container_name: raid6-6
+    network_mode: "host"
+    volumes:
+      - raid6-6:/var/data/raid6
+    environment:
+      SERVER_ID: 6
+  raid6-7:
+    restart: always
+    image: raid6:latest
+    container_name: raid6-7
+    network_mode: "host"
+    volumes:
+      - raid6-7:/var/data/raid6
+    environment:
+      SERVER_ID: 7
+
+volumes:
+  raid6-0:
+  raid6-1:
+  raid6-2:
+  raid6-3:
+  raid6-4:
+  raid6-5:
+  raid6-6:
+  raid6-7:

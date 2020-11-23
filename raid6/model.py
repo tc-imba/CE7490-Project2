@@ -80,7 +80,7 @@ async def send_file_block(server_id, file_path, piece):
                     raise Exception(resp)
     except Exception as e:
         logger.error('%s failed: sendblock %d to server %d', file_path, piece.piece_id, server_id)
-        # logger.exception(e)
+        logger.exception(e)
     return False
 
 
@@ -106,7 +106,7 @@ async def receive_file_block(server_id, file_path):
                     raise Exception(resp)
     except Exception as e:
         logger.error('%s failed: receiveblock from server %d', file_path, server_id)
-        # logger.exception(e)
+        logger.exception(e)
     return None
 
 
@@ -130,7 +130,7 @@ async def delete_file_block(server_id, file_path, timestamp):
     except Exception as e:
         pass
         # logger.error('%s failed: receiveblock from server %d', file_path, server_id)
-        # logger.exception(e)
+        logger.exception(e)
     return False
 
 

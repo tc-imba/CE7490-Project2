@@ -8,3 +8,4 @@ Cython
 aiofile
 aiohttp
 python-multipart
+aiofiles

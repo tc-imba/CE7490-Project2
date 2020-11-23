@@ -53,26 +53,41 @@ def plot_encode_decode_size_n(df, size, n, pyfinite=False):
     plt.close()
 
 
+def plot_read_write(df):
+    filename = 'read-write.%s' % file_format
+    title = 'Performance of 6+2 Configuration'
+    x = np.arange(0, 6)
+    plt.plot(x, df['encode'], label='encode', marker='o')
+    plt.plot(x, df['decode'], label='decode', marker='s')
+    plt.plot(x, df['send'], label='send', marker='>')
+    plt.plot(x, df['receive'], label='receive', marker='<')
+
+    plt.xlabel('Data Object Size')
+    plt.ylabel('Average Time (s)')
+    plt.yscale('log')
+    plt.xticks(x, ['1KB', '10KB', '100KB', '1MB', '10MB', '100MB'])
+    plt.legend()
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(os.path.join(plots_dir, filename), dpi=300)
+    plt.close()
+
+
 def main():
     filename = os.path.join(experiment_dir, "encode_decode.csv")
     df = pd.read_csv(filename)
 
-    for size in [1024, 1024 * 1024]:
-        for n in [8, 128]:
-            plot_encode_decode_size_n(df, size, n, pyfinite=True)
-
-    for size in [1024 * 1024 * 1024]:
-        for n in [8, 128]:
-            plot_encode_decode_size_n(df, size, n)
-
-    # for replica in [0, 2, 3]:
-    #     plot_facebook_nodes_vs_cost(df, replica=replica)
+    # for size in [1024, 1024 * 1024]:
+    #     for n in [8, 128]:
+    #         plot_encode_decode_size_n(df, size, n, pyfinite=True)
     #
-    # for vs_type in ["cost", "time"]:
-    #     for replica in [0, 2]:
-    #         for dataset_type in ["small", "large"]:
-    #             plot_dataset_vs_cost_or_time(df, replica=replica, dataset_type=dataset_type, vs_type=vs_type)
-    #     plot_dataset_vs_cost_or_time(df, replica=3, dataset_type="small", vs_type=vs_type)
+    # for size in [1024 * 1024 * 1024]:
+    #     for n in [8, 128]:
+    #         plot_encode_decode_size_n(df, size, n)
+
+    filename = os.path.join(experiment_dir, "read_write.csv")
+    df = pd.read_csv(filename)
+    plot_read_write(df)
 
 
 if __name__ == '__main__':

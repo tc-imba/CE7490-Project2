@@ -37,6 +37,20 @@ async def rebuild_redundancy(file: Raid6File, piece_map):
     await process_file(file, piece_map)
 
 
+async def rebuild_redundancy_all():
+    for f in os.listdir(settings.data_dir):
+        tasks = []
+        async with aiofile.async_open(os.path.join(settings.data_dir, f), 'rb') as fp:
+            buffer = await fp.read()
+            piece = pickle.loads(buffer)
+            file_path = piece.path
+            for i in range(settings.primary + settings.parity):
+                tasks.append(receive_file_block(i, file_path))
+            pieces = await asyncio.gather(*tasks)
+            file, piece_map = decode_data(pieces)
+            await rebuild_redundancy(file, piece_map)
+
+
 @app.get('/read/{file_path:path}')
 async def read_file(file_path: str, background_tasks: BackgroundTasks, stats: bool = False):
     try:
@@ -109,6 +123,7 @@ async def read_file_block(file_path: str):
         # stream = io.BytesIO(buffer)
         return FileResponse(file_path, media_type='application/octet-stream')
     except Exception as e:
+        logger.exception(e)
         raise HTTPException(400, str(e))
 
 
@@ -148,3 +163,16 @@ async def delete_file_block(file_path: str, timestamp: int):
             }
     except Exception as e:
         raise HTTPException(400, str(e))
+
+
+rebuild_server_lock = asyncio.Lock()
+
+
+@app.get('/rebuild')
+async def rebuild_server(background_tasks: BackgroundTasks):
+    if rebuild_server_lock.locked():
+        raise HTTPException(400, 'already rebuilding server')
+    background_tasks.add_task(rebuild_redundancy_all)
+    return {
+        'success': True
+    }
